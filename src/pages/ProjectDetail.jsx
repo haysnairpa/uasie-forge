@@ -30,6 +30,7 @@ export default function ProjectDetail() {
   const { projectId } = useParams();
   const { user } = useAuth();
   const [project, setProject] = useState(null);
+  const [members, setMembers] = useState({})
   const [tasks, setTasks] = useState([]);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -139,6 +140,23 @@ export default function ProjectDetail() {
 
     fetchProjectDetails();
   }, [projectId, user]);
+
+  useEffect(() => {
+    if (!project?.members) return
+
+    const fetchMembers = async () => {
+      const membersData = {}
+      for (const memberId of project.members) {
+        const userDoc = await getDoc(doc(db, 'users', memberId))
+        if (userDoc.exists()) {
+          membersData[memberId] = userDoc.data().name || memberId
+        }
+      }
+      setMembers(membersData)
+    }
+
+    fetchMembers()
+  }, [project?.members])
 
   const addTask = async (e) => {
     e.preventDefault();
@@ -423,8 +441,8 @@ export default function ProjectDetail() {
                       required
                     >
                       <option value="">Select team member</option>
-                      {project?.members?.map(memberId => (
-                        <option key={memberId} value={memberId}>{memberId}</option>
+                      {Object.entries(members).map(([id, name]) =>  (
+                        <option key={id} value={id}>{name}</option>
                       ))}
                     </select>
                   </div>

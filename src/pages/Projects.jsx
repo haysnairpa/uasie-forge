@@ -11,7 +11,8 @@ import {
   doc,
   updateDoc,
   arrayUnion,
-  Timestamp 
+  Timestamp,
+  getDocs
 } from 'firebase/firestore';
 import {
   SortingAlgorithms,
@@ -100,6 +101,7 @@ export default function Projects() {
   const [projectGraph] = useState(new ProjectGraph());
   const [projectCache] = useState(new ProjectCache());
   const [taskQueue] = useState(new TaskPriorityQueue());
+  const [allMembers, setAllMembers] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -147,6 +149,19 @@ export default function Projects() {
 
     return () => unsubscribe();
   }, [user, sortKey, projectGraph, projectCache]);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      const membersData = {};
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      usersSnapshot.forEach(doc => {
+        membersData[doc.id] = doc.data().name || doc.id;
+      });
+      setAllMembers(membersData);
+    };
+
+    fetchMembers();
+  }, []);
 
   const addProject = async (e) => {
     e.preventDefault();
@@ -335,16 +350,26 @@ export default function Projects() {
                 </p>
                 <div className="flex justify-between items-center">
                   <div className="flex -space-x-2">
-                    {project.members.slice(0, 3).map((member, idx) => (
-                      <div
-                        key={idx}
-                        className="w-8 h-8 rounded-full bg-primary-100 border-2 border-white flex items-center justify-center"
-                      >
-                        <span className="text-xs font-medium text-primary-700">
-                          {member.substring(0, 2).toUpperCase()}
-                        </span>
-                      </div>
-                    ))}
+                    {project.members.slice(0, 3).map((memberId, idx) => {
+                      const name = allMembers[memberId] || memberId;
+                      const initials = name
+                        .split(' ')
+                        .map(word => word[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2);
+
+                      return (
+                        <div
+                          key={idx}
+                          className="w-8 h-8 rounded-full bg-primary-100 border-2 border-white flex items-center justify-center"
+                        >
+                          <span className="text-xs font-medium text-primary-700">
+                            {initials}
+                          </span>
+                        </div>
+                      );
+                    })}
                     {project.members.length > 3 && (
                       <div className="w-8 h-8 rounded-full bg-secondary-100 border-2 border-white flex items-center justify-center">
                         <span className="text-xs font-medium text-secondary-700">
