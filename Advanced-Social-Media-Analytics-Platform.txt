@@ -1,0 +1,312 @@
+          DSA (Advanced Social Media Analytics Platform)
+
+
+Platform ini pada dasarnya adalah sistem yang dapat menganalisis data dari media sosial
+untuk memberikan insights yang berguna. Mari kita breakdown setiap fitur utamanya:
+
+   1. Trend Analysis & Hashtag Tracking
+         ○ Fungsi: Melacak dan menganalisis tren hashtag dan topik yang sedang
+             populer
+         ○ Contoh penggunaan:
+                ■ Menampilkan top 10 hashtag terpopuler saat ini
+                ■ Memberikan prediksi hashtag saat user mengetik (auto-complete)
+                ■ Menunjukkan grafik pertumbuhan penggunaan hashtag tertentu
+         ○ Data yang dianalisis:
+                ■ Jumlah penggunaan hashtag
+                ■ Waktu penggunaan
+                ■ Kecepatan pertumbuhan popularitas
+         ○ Data Structures:
+                ■ Max Heap
+                        ■ Untuk maintaining top K trending hashtags
+                        ■ Efisien untuk operasi insert dan extract max
+                        ■ Time Complexity: O(log n) untuk insert, O(1) untuk get max
+                ■ Hash Table
+                        ■ Untuk tracking hashtag frequencies
+                        ■ Quick lookup dan update counts
+                        ■ Time Complexity: O(1) untuk insert dan search
+         ○ Algorithms:
+                ■ Sliding Window Algorithm
+                        ■ Untuk tracking trending dalam timeframe tertentu
+                        ■ Time Complexity: O(n) dimana n adalah jumlah posts dalam
+                           window
+   2. User Network Analysis
+         ○ Fungsi: Menganalisis hubungan dan interaksi antar pengguna
+         ○ Contoh penggunaan:
+                ■ Menemukan influencer dalam suatu topik/komunitas
+                ■ Melihat pola koneksi antar user
+                ■ Mengidentifikasi komunitas yang terbentuk
+         ○ Visualisasi:
+                ■ Graph/jaringan yang menunjukkan hubungan antar user
+                ■ Highlight untuk user dengan pengaruh besar
+                ■ Pengelompokan komunitas dengan warna berbeda
+         ○ Data Structures:
+                ■ Graph (Adjacency List)
+                        ■ Representasi network connections
+                        ■ Space efficient untuk sparse graphs
+                        ■ Time Complexity: O(1) untuk add edge, O(V+E) untuk traversal
+             ■   Priority Queue
+                     ■ Untuk Dijkstra's algorithm dalam finding influential paths
+                     ■ Time Complexity: O(log n) untuk insert dan extract min
+      ○ Algorithms:
+             ■ Dijkstra's Algorithm
+                     ■ Untuk mencari shortest path dari source ke target
+                     ■ Time Complexity: O(E log V) dimana E adalah jumlah edges
+                          dan V adalah jumlah vertices
+             ■ Community Detection (Girvan-Newman)
+                     ■ Untuk identifying user communities
+                     ■ Time Complexity: O(E log V) dimana E adalah jumlah edges
+                          dan V adalah jumlah vertices
+3. Content Sentiment Analysis
+      ○ Fungsi: Menganalisis mood/sentimen dari postingan
+      ○ Contoh penggunaan:
+             ■ Mendeteksi apakah postingan bersifat positif/negatif/netral
+             ■ Menganalisis reaksi terhadap suatu topik/brand
+             ■ Melacak perubahan sentimen seiring waktu
+      ○ Output:
+             ■ Grafik sentimen
+             ■ Word clouds
+             ■ Trend analysis dari perubahan sentimen
+      ○ Data Structures:
+             ■ Binary Search Tree
+                     ■ Organizing content by timestamp
+                     ■ Efficient range queries
+                     ■ Time Complexity: O(log n) untuk insert dan search
+             ■ Trie
+                     ■ Untuk efficient content search and autocomplete
+                     ■ Time Complexity: O(m) where m is length of word
+      ○ Algorithms:
+             ■ Quick Sort
+                     ■ Sorting content by engagement metrics
+                     ■ Time Complexity: O(n log n)
+4. Engagement Pattern Detection
+      ○ Fungsi: Menganalisis pola interaksi dan engagement
+      ○ Contoh penggunaan:
+             ■ Menentukan waktu terbaik untuk posting
+             ■ Menganalisis tipe konten yang paling sukses
+             ■ Melacak metrics seperti likes, shares, comments
+      ○ Insights yang dihasilkan:
+             ■ Best time to post
+             ■ Content type performance
+             ■ Engagement rate analysis
+      ○ Data Structure:
+             ■ Min-Max Heap
+                     ■ Track highest/lowest engaging content
+                     ■ Time Complexity: O(log n) untuk insert
+                   ■ Segment Tree
+                        ■ Range queries untuk engagement metrics
+                        ■ Time Complexity: O(log n) untuk update dan range query
+         ○   Algorithms:
+                ■ Moving Average
+                        ■ Calculate engagement trends
+                        ■ Time Complexity: O(1) per update
+
+Use Case Contoh:
+
+   1. Brand Monitoring:
+         ○ Track mention brand
+         ○ Analisis sentimen customer
+         ○ Identifikasi influencer
+   2. Campaign Analysis:
+         ○ Track performa hashtag kampanye
+         ○ Analisis reach dan engagement
+         ○ Measure campaign impact
+   3. Market Research:
+         ○ Analisis competitor
+         ○ Customer sentiment research
+         ○ Trend identification
+
+     social_media_analytics/
+
+     ├── backend/
+
+     │ ├── app/
+
+     │ │ ├── main.py             # Entry point dan FastAPI setup
+
+     │ │ ├── config.py           # Konfigurasi database dan environment
+
+     │ │ ├── database/            # Database schema
+
+     │ │ │ ├── connection.py        # Database connection
+
+     │ │ │ └── models.py           # Database models
+
+     │ │ ├── data_structures/      # Data structures
+
+     │ │ │ ├── heap.py            # Heap data structure
+
+     │ │ │ ├── graph.py           # Graph data structure
+
+     │ │ │ └── tree.py           # Tree data structure
+
+     │ │ ├── algorithms/          # Algorithms
+
+     │ │ │ ├── trending.py        # Trending algorithm
+     │ │ │ ├── network.py          # Network analysis algorithm
+
+     │ │ │ └── clustering.py       # Community detection algorithm
+
+     │ │ └── api/              # API endpoints
+
+     │ │     └── endpoints/
+
+     │ ├── tests/
+
+     │ └── requirements.txt
+
+     │
+
+     ├── frontend/
+
+     │ ├── public/
+
+     │ ├── src/
+
+     │ │ ├── components/
+
+     │ │ │ ├── Dashboard/
+
+     │ │ │ ├── TrendAnalysis/
+
+     │ │ │ ├── NetworkView/
+
+     │ │ │ └── Analytics/
+
+     │ │ ├── services/          # API calls and business logic
+
+     │ │ ├── utils/           # Utility functions
+
+     │ │ └── App.js
+
+     │ └── package.json
+
+     │
+
+     └── README.md
+
+
+
+- Database schema
+CREATE DATABASE social_media_analytics;
+USE social_media_analytics;
+
+- Users Table
+CREATE TABLE users (
+user_id VARCHAR(50) PRIMARY KEY,
+username VARCHAR(100) UNIQUE NOT NULL,
+followers_count INT DEFAULT 0,
+following_count INT DEFAULT 0,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+- Database schema
+CREATE DATABASE social_media_analytics;
+USE social_media_analytics;
+
+- Users Table
+CREATE TABLE users (
+user_id VARCHAR(50) PRIMARY KEY,
+username VARCHAR(100) UNIQUE NOT NULL,
+followers_count INT DEFAULT 0,
+following_count INT DEFAULT 0,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+- Posts Table
+CREATE TABLE posts (
+post_id VARCHAR(50) PRIMARY KEY,
+user_id VARCHAR(50),
+content TEXT,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+likes_count INT DEFAULT 0,
+comments_count INT DEFAULT 0,
+shares_count INT DEFAULT 0,
+FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+- Hashtags Table
+CREATE TABLE hashtags (
+hashtag_id VARCHAR(50) PRIMARY KEY,
+name VARCHAR(100) UNIQUE NOT NULL,
+usage_count INT DEFAULT 0,
+last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+- Post_Hashtags Table
+CREATE TABLE post_hashtags (
+post_id VARCHAR(50),
+hashtag_id VARCHAR(50),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+PRIMARY KEY (post_id, hashtag_id),
+FOREIGN KEY (post_id) REFERENCES posts(post_id),
+FOREIGN KEY (hashtag_id) REFERENCES hashtags(hashtag_id)
+);
+- Engagement Table
+CREATE TABLE engagement (
+engagement_id VARCHAR(50) PRIMARY KEY,
+post_id VARCHAR(50),
+user_id VARCHAR(50),
+type ENUM('like', 'comment', 'share'),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (post_id) REFERENCES posts(post_id),
+FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+- Posts Table
+CREATE TABLE posts (
+post_id VARCHAR(50) PRIMARY KEY,
+user_id VARCHAR(50),
+content TEXT,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+likes_count INT DEFAULT 0,
+comments_count INT DEFAULT 0,
+shares_count INT DEFAULT 0,
+FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+- Hashtags Table
+CREATE TABLE hashtags (
+hashtag_id VARCHAR(50) PRIMARY KEY,
+name VARCHAR(100) UNIQUE NOT NULL,
+usage_count INT DEFAULT 0,
+last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+- Post_Hashtags Table
+CREATE TABLE post_hashtags (
+post_id VARCHAR(50),
+hashtag_id VARCHAR(50),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+PRIMARY KEY (post_id, hashtag_id),
+FOREIGN KEY (post_id) REFERENCES posts(post_id),
+FOREIGN KEY (hashtag_id) REFERENCES hashtags(hashtag_id)
+);
+
+- Engagement Table
+CREATE TABLE engagement (
+engagement_id VARCHAR(50) PRIMARY KEY,
+post_id VARCHAR(50),
+user_id VARCHAR(50),
+type ENUM('like', 'comment', 'share'),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (post_id) REFERENCES posts(post_id),
+FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+
+
+Tech Stack
+Backend:
+
+   ●   Python 3.8+
+   ●   FastAPI (Web Framework)
+   ●   MySQL (Database)
+   ●   mysql-connector-python (Database Connector)
+
+Frontend:
+
+   ●   React vite
+   ●   Shadcn (UI Components)
+   ●   Chart.js (Data Visualization)
+   ●   D3.js (Network Visualization)
+
