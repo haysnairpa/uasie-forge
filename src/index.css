@@ -62,4 +62,22 @@
   .btn-danger {
     @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
   }
+
+  .btn-success {
+    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+  }
+
+  .completed-project {
+    opacity: 0.75;
+    pointer-events: none;
+  }
+  
+  .completed-project .action-button {
+    display: none;
+  }
+  
+  .completed-banner {
+    background: linear-gradient(to right, #4ade80, #22c55e);
+    color: white;
+  }
 }

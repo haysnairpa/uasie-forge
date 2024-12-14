@@ -53,7 +53,9 @@ export default function ProjectDetail() {
   const [projectSettings, setProjectSettings] = useState({
     name: project?.name || '',
     description: project?.description || '',
-    content: project?.content || ''
+    content: project?.content || '',
+    status: project?.status || 'active',
+    completedAt: project?.completedAt || null
   });
   const navigate = useNavigate();
 
@@ -272,6 +274,38 @@ export default function ProjectDetail() {
     }
   };
 
+  const completeProject = async () => {
+    if (!window.confirm('Are you sure this project is completed?')) return;
+
+    try {
+      const projectRef = doc(db, 'projects', projectId)
+      await updateDoc(projectRef, {
+        status: 'completed',
+        completedAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      })
+
+      const tasksQuery = query(collection(db, 'tasks'), where('projectId', '==', projectId))
+      const tasksDocs = await getDocs(tasksQuery)
+      tasksDocs.forEach(async (taskDoc) => {
+        await updateDoc(doc (db, 'tasks', taskDoc.id), {
+          status: 'completed',
+          completedAt: Timestamp.now()
+        })
+      })
+
+      await addDoc(collection(db, 'activities'), {
+        type: 'project_completed',
+        description: `Project "${project.name}" has been completed!`,
+        userId: user.uid,
+        projectId,
+        timestamp: Timestamp.now()
+      })
+    } catch (error) {
+      setError('Failed to complete project: ' + error.message);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -302,115 +336,148 @@ export default function ProjectDetail() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Project Header */}
+      {/* Status Banner */}
+      {project?.status === 'completed' && (
+        <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-8">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-700">
+                This project was completed on {new Date(project.completedAt?.seconds * 1000).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Header dengan conditional buttons */}
       <div className="card mb-8">
         <div className="flex justify-between items-start mb-6">
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-secondary-900 mb-2">{project?.name}</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl font-bold text-secondary-900">{project?.name}</h1>
+              <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                project?.status === 'completed' 
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-blue-100 text-blue-700'
+              }`}>
+                {project?.status === 'completed' ? 'Completed' : 'Active'}
+              </span>
+            </div>
             <p className="text-secondary-600 mb-4">{project?.description}</p>
             <div className="prose max-w-none" 
                  dangerouslySetInnerHTML={{ __html: project?.content }} />
           </div>
-          <div className="flex gap-4">
-            <button 
-              onClick={() => setShowInviteModal(true)}
-              className="btn btn-secondary">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Invite Member
-            </button>
-            <button 
-              onClick={() => setShowSettingsModal(true)}
-              className="btn btn-primary">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-              Project Settings
-            </button>
-          </div>
+          {project?.status !== 'completed' && (
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowInviteModal(true)}
+                className="btn btn-secondary">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Invite Member
+              </button>
+              <button 
+                onClick={() => setShowSettingsModal(true)}
+                className="btn btn-primary">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                Project Settings
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Task Management Section dengan conditional rendering */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Task Management */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Add Task Form */}
-          <div className="card">
-            <h2 className="text-lg font-semibold text-secondary-900 mb-4">Add New Task</h2>
-            <form onSubmit={addTask} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Add Task Form hanya muncul jika project belum completed */}
+          {project?.status !== 'completed' && (
+            <div className="card">
+              <h2 className="text-lg font-semibold text-secondary-900 mb-4">Add New Task</h2>
+              <form onSubmit={addTask} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={newTask.title}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                      className="input"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-1">Assign To</label>
+                    <select
+                      value={newTask.assignedTo}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, assignedTo: e.target.value }))}
+                      className="input"
+                      required
+                    >
+                      <option value="">Select team member</option>
+                      {project?.members?.map(memberId => (
+                        <option key={memberId} value={memberId}>{memberId}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">Title</label>
-                  <input
-                    type="text"
-                    value={newTask.title}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                  <label className="block text-sm font-medium text-secondary-700 mb-1">Description</label>
+                  <textarea
+                    value={newTask.description}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
                     className="input"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">Assign To</label>
-                  <select
-                    value={newTask.assignedTo}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, assignedTo: e.target.value }))}
-                    className="input"
-                    required
-                  >
-                    <option value="">Select team member</option>
-                    {project?.members?.map(memberId => (
-                      <option key={memberId} value={memberId}>{memberId}</option>
-                    ))}
-                  </select>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-1">Priority (1-5)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="5"
+                      value={newTask.priority}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, priority: parseInt(e.target.value) }))}
+                      className="input"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-1">Duration (days)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newTask.duration}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                      className="input"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-1">Description</label>
-                <textarea
-                  value={newTask.description}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  className="input"
-                  required
-                />
-              </div>
+                <button type="submit" className="btn btn-primary w-full">
+                  Add Task
+                </button>
+              </form>
+            </div>
+          )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">Priority (1-5)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={newTask.priority}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, priority: parseInt(e.target.value) }))}
-                    className="input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">Duration (days)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={newTask.duration}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-                    className="input"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button type="submit" className="btn btn-primary w-full">
-                Add Task
-              </button>
-            </form>
-          </div>
-
-          {/* Task Kanban Board */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Task Kanban Board dengan visual berbeda untuk completed project */}
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 ${
+            project?.status === 'completed' ? 'opacity-75' : ''
+          }`}>
             {/* Todo Column */}
             <div className="card !p-4">
               <div className="flex items-center justify-between mb-4">
@@ -433,12 +500,14 @@ export default function ProjectDetail() {
                       </span>
                     </div>
                     <p className="text-sm text-secondary-600 mb-3">{task.description}</p>
-                    <button
-                      onClick={() => updateTaskStatus(task.id, 'in-progress')}
-                      className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                    >
-                      Start Progress →
-                    </button>
+                    {project?.status !== 'completed' && (
+                      <button
+                        onClick={() => updateTaskStatus(task.id, 'in-progress')}
+                        className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                      >
+                        Start Progress →
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -500,38 +569,34 @@ export default function ProjectDetail() {
           </div>
         </div>
 
-        {/* Comments Section */}
+        {/* Team Discussion tetap aktif meski project completed */}
         <div className="lg:col-span-1">
-          <div className="card sticky top-8">
-            <h2 className="text-lg font-semibold text-secondary-900 mb-6">Team Discussion</h2>
-            
-            <div className="space-y-4 mb-6 max-h-[calc(100vh-24rem)] overflow-y-auto">
+          <div className="card">
+            <h2 className="text-lg font-semibold text-secondary-900 mb-4">Team Discussion</h2>
+            <div className="space-y-4">
               {comments.map(comment => (
                 <div key={comment.id} className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                    <span className="text-sm font-medium text-primary-700">
+                  <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
+                    <span className="text-xs font-medium text-primary-700">
                       {comment.userId.substring(0, 2).toUpperCase()}
                     </span>
                   </div>
                   <div className="flex-1">
-                    <div className="bg-secondary-50 rounded-lg p-3">
-                      <p className="text-sm text-secondary-900">{comment.content}</p>
-                    </div>
-                    <p className="mt-1 text-xs text-secondary-500">
-                      {new Date(comment.createdAt.seconds * 1000).toLocaleString()}
-                    </p>
+                    <p className="text-sm text-secondary-600">{comment.content}</p>
+                    <span className="text-xs text-secondary-400">
+                      {new Date(comment.timestamp?.seconds * 1000).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
-
             <form onSubmit={addComment} className="mt-4">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write a comment..."
+                className="input w-full mb-2"
                 rows={3}
-                className="input mb-3"
+                placeholder="Write a comment..."
                 required
               />
               <button type="submit" className="btn btn-primary w-full">
@@ -656,6 +721,15 @@ export default function ProjectDetail() {
                 >
                   Delete Project
                 </button>
+                {projectSettings.status !== 'completed' && (
+                  <button
+                    type='button'
+                    onClick={completeProject}
+                    className='btn btn-success'
+                  >
+                    Complete Project
+                  </button>
+                )}
                 <div className="flex gap-2">
                   <button 
                     type="button"
