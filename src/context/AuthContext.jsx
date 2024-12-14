@@ -1,43 +1,61 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { auth, db } from '../config/firebase';
 import { 
-  createUserWithEmailAndPassword,
+  onAuthStateChanged, 
   signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signOut 
 } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
-export function AuthContextProvider({ children }) {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  function signup(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
-  }
-
-  function login(email, password) {
-    return signInWithEmailAndPassword(auth, email, password);
-  }
-
-  function logout() {
-    return signOut(auth);
-  }
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        setUser({
+          uid: user.uid,
+          email: user.email,
+          name: userDoc.data()?.name || 'User'
+        });
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
+  const login = (email, password) => {
+    return signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const signup = async (email, password, name) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      name,
+      email,
+      createdAt: new Date()
+    });
+    return userCredential;
+  };
+
+  const logout = () => {
+    return signOut(auth);
+  };
+
   const value = {
     user,
-    signup,
     login,
+    signup,
     logout,
+    loading
   };
 
   return (

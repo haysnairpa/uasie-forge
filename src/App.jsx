@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthContextProvider } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
@@ -11,7 +11,7 @@ import ProjectDetail from './pages/ProjectDetail';
 
 function App() {
   return (
-    <AuthContextProvider>
+    <AuthProvider>
       <Router>
         <div className="min-h-screen bg-gray-100">
           <Navbar />
@@ -43,7 +43,7 @@ function App() {
           </div>
         </div>
       </Router>
-    </AuthContextProvider>
+    </AuthProvider>
   );
 }
 
