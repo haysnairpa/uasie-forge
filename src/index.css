@@ -30,4 +30,36 @@
   .card {
     @apply bg-white rounded-xl shadow-card p-6;
   }
+
+  .prose {
+    @apply text-secondary-800;
+  }
+  
+  .prose p {
+    @apply mb-4;
+  }
+  
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    @apply font-semibold text-secondary-900 mb-4;
+  }
+  
+  .prose ul, .prose ol {
+    @apply mb-4 pl-4;
+  }
+  
+  .prose li {
+    @apply mb-2;
+  }
+  
+  .prose blockquote {
+    @apply border-l-4 border-secondary-200 pl-4 italic my-4;
+  }
+  
+  .prose code {
+    @apply bg-secondary-100 px-1 py-0.5 rounded;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  }
 }

@@ -21,6 +21,8 @@ import {
   ProjectCache,
   TaskPriorityQueue
 } from '../utils/algorithms';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 // Graph implementation untuk project relationships
 class ProjectGraph {
@@ -86,7 +88,11 @@ class ProjectGraph {
 export default function Projects() {
   const { user } = useAuth();
   const [projects, setProjects] = useState([]);
-  const [newProject, setNewProject] = useState({ name: '', description: '' });
+  const [newProject, setNewProject] = useState({ 
+    name: '', 
+    description: '',
+    content: '' 
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -175,7 +181,7 @@ export default function Projects() {
         members: [user.uid]
       });
 
-      setNewProject({ name: '', description: '' });
+      setNewProject({ name: '', description: '', content: '' });
     } catch (error) {
       setError('Error creating project: ' + error.message);
     }
@@ -233,29 +239,53 @@ export default function Projects() {
             <form onSubmit={addProject} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Project Name
+                  Title
                 </label>
                 <input
                   type="text"
                   value={newProject.name}
                   onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
-                  className="input"
+                  className="input w-full"
+                  placeholder="Title of the project"
                   required
                 />
               </div>
+              
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Description
+                  Short Description
                 </label>
-                <textarea
+                <input
+                  type="text"
                   value={newProject.description}
                   onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
-                  rows={4}
-                  className="input"
+                  className="input w-full"
+                  placeholder="Brief description"
                   required
                 />
               </div>
-              <button type="submit" className="btn btn-primary w-full">
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-1">
+                  Content
+                </label>
+                <ReactQuill
+                  value={newProject.content}
+                  onChange={(content) => setNewProject(prev => ({ ...prev, content }))}
+                  className="bg-white"
+                  modules={{
+                    toolbar: [
+                      ['bold', 'italic', 'strike'],
+                      ['blockquote', 'code-block'],
+                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                      ['link'],
+                      ['clean']
+                    ],
+                  }}
+                />
+              </div>
+
+              <button type="submit" className="btn btn-primary w-full mt-4">
                 Create Project
               </button>
             </form>
