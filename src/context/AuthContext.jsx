@@ -36,15 +36,7 @@ export function AuthProvider({ children }) {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = async (email, password, name) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await setDoc(doc(db, 'users', userCredential.user.uid), {
-      name,
-      email,
-      createdAt: new Date()
-    });
-    return userCredential;
-  };
+ 
 
   const logout = () => {
     return signOut(auth);
@@ -53,7 +45,6 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     login,
-    signup,
     logout,
     loading
   };

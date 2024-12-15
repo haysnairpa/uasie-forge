@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { db } from '../config/firebase';
+import { auth, db } from '../config/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -10,16 +10,14 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { signup } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     try {
-      const userCredential = await signup(email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Create user profile in Firestore
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         name,
         email,
