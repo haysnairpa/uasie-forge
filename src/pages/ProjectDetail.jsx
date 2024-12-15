@@ -59,29 +59,47 @@ export default function ProjectDetail() {
     completedAt: project?.completedAt || null
   });
   const navigate = useNavigate();
+  const [projectDependencies, setProjectDependencies] = useState([]);
 
   const addCollaborator = async (email) => {
     try {
+      // Find user with email
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', email.trim()));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        throw new Error('User not found');
+      }
+
+      const userId = querySnapshot.docs[0].id;
       const projectRef = doc(db, 'projects', projectId);
+      
+      // Check if user already a member
+      const projectDoc = await getDoc(projectRef);
+      const currentMembers = projectDoc.data().members || [];
+      
+      if (currentMembers.includes(userId)) {
+        throw new Error('User already a member');
+      }
+
       await updateDoc(projectRef, {
-        members: arrayUnion(email),
+        members: arrayUnion(userId),
         updatedAt: Timestamp.now()
-      })
+      });
 
-      await addDoc(collection(db, 'activities'), {
-        type: 'member_invited',
-        description: `Invited ${email} to project`,
-        userId: user.uid,
-        projectId,
-        timestamp: Timestamp.now()
-      })
+      // Update local state
+      setMembers(prev => ({
+        ...prev,
+        [userId]: querySnapshot.docs[0].data().name || email
+      }));
 
-      setShowInviteModal(false)
-      setInviteEmail('')
+      setShowInviteModal(false);
+      setInviteEmail('');
     } catch (error) {
-      setError('Failed to invite member: ' + error.message)
+      setError('Failed to invite member: ' + error.message);
     }
-  }
+  };
 
   useEffect(() => {
     if (!projectId || !user) return;
@@ -157,6 +175,26 @@ export default function ProjectDetail() {
 
     fetchMembers()
   }, [project?.members])
+
+  useEffect(() => {
+    if (!project?.dependencies) return;
+
+    const fetchDependencies = async () => {
+      const deps = [];
+      for (const depId of project.dependencies) {
+        const projectDoc = await getDoc(doc(db, 'projects', depId));
+        if (projectDoc.exists()) {
+          deps.push({
+            id: projectDoc.id,
+            ...projectDoc.data()
+          });
+        }
+      }
+      setProjectDependencies(deps);
+    };
+
+    fetchDependencies();
+  }, [project?.dependencies]);
 
   const addTask = async (e) => {
     e.preventDefault();
@@ -413,6 +451,25 @@ export default function ProjectDetail() {
         </div>
       </div>
 
+      {projectDependencies.length > 0 && (
+        <div className="card mb-8">
+          <h3 className="text-lg font-medium mb-4">Dependencies</h3>
+          <div className="space-y-3">
+            {projectDependencies.map(dep => (
+              <div key={dep.id} className="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
+                <span>{dep.name}</span>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full
+                  ${dep.status === 'completed' 
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-yellow-100 text-yellow-700'}`}>
+                  {dep.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Task Management Section dengan conditional rendering */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
@@ -633,7 +690,7 @@ export default function ProjectDetail() {
             <form onSubmit={async (e) => {
               e.preventDefault();
               try {
-                await addCollaborator(projectId, inviteEmail);
+                await addCollaborator(inviteEmail);
                 setShowInviteModal(false);
                 setInviteEmail('');
               } catch (error) {

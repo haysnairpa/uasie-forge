@@ -4,18 +4,15 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  // Your Firebase configuration object will go here
-  // You'll need to replace these with your actual Firebase project credentials
-  apiKey: "AIzaSyAX5rJnGLLnTiJtdZQiIAtR0hH4jik_ciY",
-  authDomain: "dsa-2-89e0f.firebaseapp.com",
-  projectId: "dsa-2-89e0f",
-  storageBucket: "dsa-2-89e0f.firebasestorage.app",
-  messagingSenderId: "572708039939",
-  appId: "1:572708039939:web:4a89a35eb476e0d9ae0d36",
-  measurementId: "G-7N06Q466K9"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);

@@ -24,6 +24,9 @@ import {
 } from '../utils/algorithms';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import DependencyGraph from '../components/DependencyGraph';
+import ProjectCard from '../components/ProjectCard';
+import ProjectForm from '../components/ProjectForm';
 
 // Graph implementation untuk project relationships
 class ProjectGraph {
@@ -102,6 +105,11 @@ export default function Projects() {
   const [projectCache] = useState(new ProjectCache());
   const [taskQueue] = useState(new TaskPriorityQueue());
   const [allMembers, setAllMembers] = useState({});
+  const [showNewProjectForm, setShowNewProjectForm] = useState(false);
+  const [dependencies, setDependencies] = useState([]);
+  const [formData, setFormData] = useState({
+    dependencies: []
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -151,6 +159,16 @@ export default function Projects() {
   }, [user, sortKey, projectGraph, projectCache]);
 
   useEffect(() => {
+    const deps = projects.flatMap(project => 
+      (project.dependencies || []).map(depId => ({
+        source: project.id,
+        target: depId
+      }))
+    );
+    setDependencies(deps);
+  }, [projects]);
+
+  useEffect(() => {
     const fetchMembers = async () => {
       const membersData = {};
       const usersSnapshot = await getDocs(collection(db, 'users'));
@@ -163,40 +181,35 @@ export default function Projects() {
     fetchMembers();
   }, []);
 
-  const addProject = async (e) => {
-    e.preventDefault();
+  const addProject = async (formData) => {
     setError('');
 
     try {
-      // Check if project name already exists using binary search
-      const sortedByName = SortingAlgorithms.quickSort([...projects], 'name');
-      const existingProject = SearchAlgorithms.binarySearch(sortedByName, newProject.name);
-      
-      if (existingProject) {
-        setError('Project with this name already exists');
-        return;
-      }
+      const hasUnfinishedDeps = formData.dependencies?.some(depId => {
+        const dep = projects.find(p => p.id === depId);
+        return dep && dep.status !== 'completed';
+      });
 
       const projectRef = await addDoc(collection(db, 'projects'), {
-        ...newProject,
+        name: formData.name,
+        description: formData.description,
+        content: formData.content,
+        dependencies: formData.dependencies || [],
         createdBy: user.uid,
         members: [user.uid],
         createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
+        status: hasUnfinishedDeps ? 'waiting' : 'ready'
       });
 
       // Add to graph
       projectGraph.addVertex(projectRef.id);
-
-      // Cache the new project
-      projectCache.set(projectRef.id, {
-        id: projectRef.id,
-        ...newProject,
-        createdBy: user.uid,
-        members: [user.uid]
+      formData.dependencies?.forEach(depId => {
+        projectGraph.addVertex(depId);
+        projectGraph.addEdge(projectRef.id, depId);
       });
 
-      setNewProject({ name: '', description: '', content: '' });
+      setShowNewProjectForm(false);
     } catch (error) {
       setError('Error creating project: ' + error.message);
     }
@@ -251,59 +264,10 @@ export default function Projects() {
         <div className="lg:col-span-1">
           <div className="card sticky top-8">
             <h2 className="text-xl font-semibold text-secondary-900 mb-6">Create Project</h2>
-            <form onSubmit={addProject} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={newProject.name}
-                  onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
-                  className="input w-full"
-                  placeholder="Title of the project"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Short Description
-                </label>
-                <input
-                  type="text"
-                  value={newProject.description}
-                  onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
-                  className="input w-full"
-                  placeholder="Brief description"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 mb-1">
-                  Content
-                </label>
-                <ReactQuill
-                  value={newProject.content}
-                  onChange={(content) => setNewProject(prev => ({ ...prev, content }))}
-                  className="bg-white"
-                  modules={{
-                    toolbar: [
-                      ['bold', 'italic', 'strike'],
-                      ['blockquote', 'code-block'],
-                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                      ['link'],
-                      ['clean']
-                    ],
-                  }}
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary w-full mt-4">
-                Create Project
-              </button>
-            </form>
+            <ProjectForm 
+              onSubmit={addProject} 
+              existingProjects={projects} 
+            />
           </div>
         </div>
 
@@ -332,57 +296,15 @@ export default function Projects() {
           </div>
 
           {/* Projects Grid */}
-          <div className="grid gap-6 sm:grid-cols-2">
+          <DependencyGraph projects={projects} dependencies={dependencies} />
+          <div className="grid gap-6 sm:grid-cols-2 mt-8">
             {filteredProjects.map((project) => (
-              <Link 
+              <ProjectCard 
                 key={project.id} 
-                to={`/project/${project.id}`}
-                className="card hover:shadow-lg transition-shadow duration-200"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-secondary-900">{project.name}</h3>
-                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary-50 text-primary-700">
-                    {project.status || 'Active'}
-                  </span>
-                </div>
-                <p className="text-secondary-600 text-sm mb-4 line-clamp-2">
-                  {project.description}
-                </p>
-                <div className="flex justify-between items-center">
-                  <div className="flex -space-x-2">
-                    {project.members.slice(0, 3).map((memberId, idx) => {
-                      const name = allMembers[memberId] || memberId;
-                      const initials = name
-                        .split(' ')
-                        .map(word => word[0])
-                        .join('')
-                        .toUpperCase()
-                        .slice(0, 2);
-
-                      return (
-                        <div
-                          key={idx}
-                          className="w-8 h-8 rounded-full bg-primary-100 border-2 border-white flex items-center justify-center"
-                        >
-                          <span className="text-xs font-medium text-primary-700">
-                            {initials}
-                          </span>
-                        </div>
-                      );
-                    })}
-                    {project.members.length > 3 && (
-                      <div className="w-8 h-8 rounded-full bg-secondary-100 border-2 border-white flex items-center justify-center">
-                        <span className="text-xs font-medium text-secondary-700">
-                          +{project.members.length - 3}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xs text-secondary-500">
-                    {new Date(project.updatedAt.seconds * 1000).toLocaleDateString()}
-                  </span>
-                </div>
-              </Link>
+                project={project}
+                allProjects={projects}
+                members={allMembers}
+              />
             ))}
           </div>
         </div>
