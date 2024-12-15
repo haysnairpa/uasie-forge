@@ -30,61 +30,64 @@ import ProjectForm from '../components/ProjectForm';
 
 // Graph implementation untuk project relationships
 class ProjectGraph {
+  // Adjacency List implementation for project dependencies
+  // Uses Map for O(1) vertex access
   constructor() {
     this.adjacencyList = new Map();
   }
   
+  // O(1) vertex addition
   addVertex(projectId) {
     if (!this.adjacencyList.has(projectId)) {
       this.adjacencyList.set(projectId, []);
     }
   }
   
+  // O(1) edge addition - undirected graph implementation
   addEdge(project1, project2) {
     this.adjacencyList.get(project1).push(project2);
     this.adjacencyList.get(project2).push(project1);
   }
 
-  // Mencari cycle dalam graph menggunakan DFS
+  // DFS implementation for cycle detection - O(V + E) complexity
   hasCycle(startNode, visited = new Set(), parent = null) {
     visited.add(startNode);
-
     const neighbors = this.adjacencyList.get(startNode) || [];
+    
+    // Recursive DFS with parent tracking for undirected graph
     for (const neighbor of neighbors) {
       if (!visited.has(neighbor)) {
         if (this.hasCycle(neighbor, visited, startNode)) {
           return true;
         }
       } else if (neighbor !== parent) {
-        return true;
+        return true; // Found a cycle
       }
     }
-
     return false;
   }
 
-  // Mencari shortest path antara dua proyek
+  // BFS implementation for shortest path - O(V + E) complexity
   findShortestPath(start, end) {
     const queue = [[start]];
     const visited = new Set([start]);
 
+    // BFS with path tracking
     while (queue.length > 0) {
       const path = queue.shift();
       const current = path[path.length - 1];
 
-      if (current === end) {
-        return path;
-      }
+      if (current === end) return path;
 
+      // Process all neighbors
       const neighbors = this.adjacencyList.get(current) || [];
       for (const neighbor of neighbors) {
         if (!visited.has(neighbor)) {
           visited.add(neighbor);
-          queue.push([...path, neighbor]);
+          queue.push([...path, neighbor]); // Create new path with neighbor
         }
       }
     }
-
     return null;
   }
 }

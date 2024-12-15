@@ -12,10 +12,12 @@ import TimeSeriesAnalyzer from '../utils/analytics';
 
 // Trie untuk autocomplete dan search suggestions
 class TrieNode {
+  // Each node stores character data and word completion status
+  // Uses Map for O(1) child access and memory efficiency
   constructor() {
-    this.children = new Map();
-    this.isEndOfWord = false;
-    this.data = null;
+    this.children = new Map(); // Store child nodes
+    this.isEndOfWord = false;  // Mark complete words
+    this.data = null;          // Store additional data for complete words
   }
 }
 
@@ -24,8 +26,11 @@ class Trie {
     this.root = new TrieNode();
   }
 
+  // O(m) insertion where m is word length
+  // Stores word data for autocomplete suggestions
   insert(word, data) {
     let current = this.root;
+    // Build trie path for each character
     for (const char of word.toLowerCase()) {
       if (!current.children.has(char)) {
         current.children.set(char, new TrieNode());
@@ -33,24 +38,28 @@ class Trie {
       current = current.children.get(char);
     }
     current.isEndOfWord = true;
-    current.data = data;
+    current.data = data; // Store associated data
   }
 
+  // O(p + n) search where p is prefix length and n is number of matching words
+  // Returns array of matches with their associated data
   search(prefix) {
     let current = this.root;
+    // Navigate to prefix endpoint
     for (const char of prefix.toLowerCase()) {
-      if (!current.children.has(char)) {
-        return [];
-      }
+      if (!current.children.has(char)) return [];
       current = current.children.get(char);
     }
     return this.collectWords(current, prefix);
   }
 
+  // DFS to collect all words with given prefix
+  // O(n) where n is number of matching words
   collectWords(node, prefix, words = []) {
     if (node.isEndOfWord) {
       words.push({ word: prefix, data: node.data });
     }
+    // Recursively collect all child paths
     for (const [char, childNode] of node.children) {
       this.collectWords(childNode, prefix + char, words);
     }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../config/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -95,6 +95,14 @@ export default function Signup() {
           Sign up
         </button>
       </form>
+      <div className="text-center mt-4">
+        <p className="text-sm text-secondary-600">
+          Already have an account?{' '}
+          <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

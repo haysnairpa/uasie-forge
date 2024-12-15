@@ -47,33 +47,38 @@ export class SortingAlgorithms {
 
 // Search Algorithms
 export class SearchAlgorithms {
-  // Binary Search untuk mencari proyek berdasarkan nama
+  // Binary Search - O(log n) complexity
+  // Requires sorted array by name property
   static binarySearch(sortedArray, target) {
     let left = 0;
     let right = sortedArray.length - 1;
 
     while (left <= right) {
       const mid = Math.floor((left + right) / 2);
+      // Direct string comparison for project names
       if (sortedArray[mid].name === target) return sortedArray[mid];
       if (sortedArray[mid].name < target) left = mid + 1;
       else right = mid - 1;
     }
-
     return null;
   }
 
-  // Depth-First Search untuk mencari path dependensi proyek
+  // DFS for project dependency path - O(V + E) complexity
+  // Uses adjacency list representation
   static dfs(graph, startNode, visited = new Set()) {
     visited.add(startNode);
     const paths = [];
 
+    // Process all unvisited neighbors
     const neighbors = graph.get(startNode) || [];
     for (const neighbor of neighbors) {
       if (!visited.has(neighbor)) {
+        // Recursively collect dependency paths
         paths.push(...this.dfs(graph, neighbor, visited));
       }
     }
 
+    // Return path including current node
     return [startNode, ...paths];
   }
 }
@@ -114,18 +119,22 @@ export class ProjectCache {
 
 // Greedy Algorithm untuk resource allocation
 export class ResourceAllocation {
+  // Greedy resource allocation - O(n log n + nr) complexity
+  // n = number of tasks, r = number of resources
   static allocateResources(tasks, availableResources) {
-    // Sort tasks by priority (descending) and duration (ascending)
+    // Sort by priority first, then duration for tie-breaking
     const sortedTasks = tasks.sort((a, b) => {
       if (b.priority !== a.priority) return b.priority - a.priority;
       return a.duration - b.duration;
     });
 
+    // Track allocations and resource loads
     const allocation = new Map();
     const resourceLoad = new Map(availableResources.map(r => [r.id, 0]));
 
+    // Greedy allocation process
     for (const task of sortedTasks) {
-      // Find resource with minimum current load
+      // Find least loaded resource - O(r) operation
       let minLoadResource = availableResources[0];
       let minLoad = resourceLoad.get(minLoadResource.id);
 
@@ -137,7 +146,7 @@ export class ResourceAllocation {
         }
       }
 
-      // Allocate task to resource
+      // Assign task to resource with minimum load
       allocation.set(task.id, minLoadResource.id);
       resourceLoad.set(
         minLoadResource.id,
@@ -151,15 +160,21 @@ export class ResourceAllocation {
 
 // Dynamic Programming untuk optimal task scheduling
 export class TaskScheduler {
+  // Optimal task scheduling using 0/1 Knapsack approach
+  // Time complexity: O(n * maxDuration)
+  // Space complexity: O(n * maxDuration)
   static findOptimalSchedule(tasks, maxDuration) {
     const n = tasks.length;
+    // DP table for optimal values
     const dp = Array(n + 1).fill(null).map(() => Array(maxDuration + 1).fill(0));
+    // Track included tasks
     const included = Array(n + 1).fill(null).map(() => Array(maxDuration + 1).fill(false));
 
-    // Fill dp table
+    // Fill DP table - consider each task and duration combination
     for (let i = 1; i <= n; i++) {
       for (let w = 0; w <= maxDuration; w++) {
         if (tasks[i-1].duration <= w) {
+          // Compare value with and without current task
           const valueWith = tasks[i-1].priority + dp[i-1][w - tasks[i-1].duration];
           const valueWithout = dp[i-1][w];
           
@@ -175,7 +190,7 @@ export class TaskScheduler {
       }
     }
 
-    // Reconstruct solution
+    // Reconstruct optimal schedule from DP table
     const schedule = [];
     let i = n;
     let w = maxDuration;
@@ -194,33 +209,29 @@ export class TaskScheduler {
 
 // Min Heap untuk task priority management
 export class TaskPriorityQueue {
+  // Min Heap implementation for task prioritization
+  // O(log n) insertion and extraction
   constructor() {
     this.heap = [];
   }
 
-  parent(index) {
-    return Math.floor((index - 1) / 2);
-  }
+  // Helper methods for heap index calculations
+  parent(index) { return Math.floor((index - 1) / 2); }
+  leftChild(index) { return 2 * index + 1; }
+  rightChild(index) { return 2 * index + 2; }
 
-  leftChild(index) {
-    return 2 * index + 1;
-  }
-
-  rightChild(index) {
-    return 2 * index + 2;
-  }
-
+  // O(1) element swapping
   swap(index1, index2) {
-    const temp = this.heap[index1];
-    this.heap[index1] = this.heap[index2];
-    this.heap[index2] = temp;
+    [this.heap[index1], this.heap[index2]] = [this.heap[index2], this.heap[index1]];
   }
 
+  // O(log n) insertion with upward heapification
   insert(task) {
     this.heap.push(task);
     this.heapifyUp(this.heap.length - 1);
   }
 
+  // Maintain min heap property upward - O(log n)
   heapifyUp(index) {
     while (index > 0 && this.heap[this.parent(index)].priority > this.heap[index].priority) {
       this.swap(index, this.parent(index));
@@ -228,6 +239,7 @@ export class TaskPriorityQueue {
     }
   }
 
+  // O(log n) minimum element extraction
   extractMin() {
     if (this.heap.length === 0) return null;
     if (this.heap.length === 1) return this.heap.pop();
@@ -239,19 +251,25 @@ export class TaskPriorityQueue {
     return min;
   }
 
+  // Maintain min heap property downward - O(log n)
   heapifyDown(index) {
     let minIndex = index;
     const leftChild = this.leftChild(index);
     const rightChild = this.rightChild(index);
 
-    if (leftChild < this.heap.length && this.heap[leftChild].priority < this.heap[minIndex].priority) {
+    // Compare with left child
+    if (leftChild < this.heap.length && 
+        this.heap[leftChild].priority < this.heap[minIndex].priority) {
       minIndex = leftChild;
     }
 
-    if (rightChild < this.heap.length && this.heap[rightChild].priority < this.heap[minIndex].priority) {
+    // Compare with right child
+    if (rightChild < this.heap.length && 
+        this.heap[rightChild].priority < this.heap[minIndex].priority) {
       minIndex = rightChild;
     }
 
+    // Recursively heapify down if needed
     if (index !== minIndex) {
       this.swap(index, minIndex);
       this.heapifyDown(minIndex);

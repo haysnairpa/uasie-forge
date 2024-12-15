@@ -80,80 +80,79 @@ class ProjectNode {
 }
 
 class ProjectTree {
+  // Tree data structure for hierarchical project management
+  // Uses Map for O(1) child access and flexible key types
   constructor() {
     this.root = null;
   }
 
+  // O(n) insertion - needs to find parent first
   insert(parentId, projectId, projectData) {
     const newNode = new ProjectNode(projectId, projectData);
-
     if (!this.root) {
       this.root = newNode;
       return;
     }
-
+    // Traverse tree to find parent node
     const parentNode = this.findNode(this.root, parentId);
     if (parentNode) {
       parentNode.addChild(newNode);
     }
   }
 
+  // DFS implementation for finding nodes - O(n) time complexity
   findNode(node, projectId) {
-    if (node.projectId === projectId) {
-      return node;
-    }
-
+    if (node.projectId === projectId) return node;
+    
+    // Recursive DFS through children
     for (const childNode of node.children.values()) {
       const found = this.findNode(childNode, projectId);
       if (found) return found;
     }
-
     return null;
   }
 
-  // Depth-First Search untuk mencari proyek
+  // DFS search with string matching - O(n) time complexity
   dfsSearch(searchTerm) {
     const results = [];
     
     function dfs(node) {
+      // String matching for project name and description
       if (node.projectData.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           node.projectData.description.toLowerCase().includes(searchTerm.toLowerCase())) {
         results.push(node.projectData);
       }
       
+      // Recursive traversal
       for (const childNode of node.children.values()) {
         dfs(childNode);
       }
     }
 
-    if (this.root) {
-      dfs(this.root);
-    }
-
+    if (this.root) dfs(this.root);
     return results;
   }
 
-  // Breadth-First Search untuk level proyek
+  // BFS implementation for level-order traversal - O(n) time complexity
+  // Uses queue data structure for level order processing
   bfsTraversal() {
     if (!this.root) return [];
-
     const result = [];
     const queue = [this.root];
 
     while (queue.length > 0) {
       const node = queue.shift();
       result.push(node.projectData);
-
+      // Add all children to queue for next level processing
       for (const childNode of node.children.values()) {
         queue.push(childNode);
       }
     }
-
     return result;
   }
 }
 
-// Algoritma untuk menghitung Critical Path dalam proyek
+// Algo for chace count in project
 class Task {
   constructor(id, duration, dependencies = []) {
     this.id = id;
